@@ -1,7 +1,5 @@
-// BaseLibrary.cpp
+// BaseLibrary.h
 //
-
-#include "stdafx.h"
 
 #include <thread>				// for std::thread
 #include <condition_variable>	// for std::condition_variable
