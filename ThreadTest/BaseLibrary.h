@@ -41,11 +41,12 @@ class Controller
 public:
 	Controller() : done(false)
 	{
-		thread = std::thread(&Controller::WorkThread, this);
+		threads.push_back(std::thread(&Controller::WorkThread, this));
+		threads.push_back(std::thread(&Controller::WorkThread, this));
 	}
 	~Controller()
 	{
-		thread.join();
+		std::for_each(std::begin(threads), std::end(threads), std::mem_fun_ref(&std::thread::join));
 	}
 	void QueueWork(std::shared_ptr<Work> work)
 	{
@@ -99,7 +100,7 @@ public:
 	virtual void UpdateControls() {}
 	virtual void OnFinish(Work * work) {}
 
-	std::thread thread;
+	std::vector<std::thread> threads;
 	std::mutex m;
 	std::condition_variable cv;
 	std::queue<std::shared_ptr<Work>> queue;
