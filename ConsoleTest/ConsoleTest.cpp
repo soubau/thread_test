@@ -22,6 +22,8 @@ public:
 	{
 		controlName[START] = "Start";
 		controlName[STOP] = "Stop";
+		controlName[START2] = "Start2";
+		controlName[STOP2] = "Stop2";
 		controlName[QUIT] = "Quit";
 	}
 	virtual void UpdateControls()
@@ -33,10 +35,9 @@ public:
 	{
 		std::cout << "(Done)\n";
 		UpdateControls();
-		if (typeid(*work) == typeid(QuitWork))
+		if (IsQuitWork(work))
 		{
 			std::cout << "(Press any number and enter to quit)\n";
-			SetDone();
 		}
 	}
 
@@ -50,11 +51,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	static ConsoleController *consoleController;
 
 	consoleController = new ConsoleController();
-
-	consoleController->EnableControl(START, false);
-	consoleController->EnableControl(STOP, false);
-	consoleController->EnableControl(QUIT, true);
-	consoleController->UpdateControls();
 
 	Work *work = new InitWork(consoleController);
 
@@ -82,6 +78,12 @@ int _tmain(int argc, _TCHAR* argv[])
 			break;
 		case STOP:
 			consoleController->QueueWork(std::make_shared<StopWork>(StopWork(consoleController)));
+			break;
+		case START2:
+			consoleController->QueueWork(std::make_shared<Start2Work>(Start2Work(consoleController)));
+			break;
+		case STOP2:
+			consoleController->QueueWork(std::make_shared<Stop2Work>(Stop2Work(consoleController)));
 			break;
 		case QUIT:
 			consoleController->QueueWork(std::make_shared<QuitWork>(QuitWork(consoleController)));

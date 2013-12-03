@@ -16,10 +16,12 @@ enum Control
 {
 	START,
 	STOP,
+	START2,
+	STOP2,
 	QUIT
 };
 
-class Controller;
+class Controller;				// forward declaration for Work
 
 class Work
 {
@@ -31,6 +33,8 @@ public:
 
 	Controller *controller;
 };
+
+class QuitWork;					// forward declaration for Controller
 
 class Controller
 {
@@ -51,11 +55,19 @@ public:
 		queue.push(work);
 		cv.notify_one();
 	}
+	bool IsQuitWork(Work * work)
+	{
+		return typeid(*work) == typeid(QuitWork);
+	}
 	void SetDone()
 	{
 		std::lock_guard<std::mutex> lock(m);
 		done = true;
 		cv.notify_one();
+	}
+	bool GetDone()
+	{
+		return done;
 	}
 	void WorkThread() 
 	{
@@ -109,6 +121,9 @@ public:
 	{
 		controller->EnableControl(START, false);
 		controller->EnableControl(STOP, false);
+		controller->EnableControl(START2, false);
+		controller->EnableControl(STOP2, false);
+		controller->EnableControl(QUIT, true);
 		controller->UpdateControls();
 	}
 	virtual void Execute() 
@@ -117,8 +132,12 @@ public:
 	}
 	virtual void OnFinish()
 	{
-		controller->EnableControl(START, true);
-		Work::OnFinish();
+		if (!controller->GetDone())
+		{
+			controller->EnableControl(START, true);
+			controller->EnableControl(START2, true);
+			Work::OnFinish();
+		}
 	}
 };
 
@@ -137,8 +156,11 @@ public:
 	}
 	virtual void OnFinish()
 	{
-		controller->EnableControl(STOP, true);
-		Work::OnFinish();
+		if (!controller->GetDone())
+		{
+			controller->EnableControl(STOP, true);
+			Work::OnFinish();
+		}
 	}
 };
 
@@ -157,8 +179,57 @@ public:
 	}
 	virtual void OnFinish()
 	{
-		controller->EnableControl(START, true);
-		Work::OnFinish();
+		if (!controller->GetDone())
+		{
+			controller->EnableControl(START, true);
+			Work::OnFinish();
+		}
+	}
+};
+
+class Start2Work : public Work
+{
+public:
+	Start2Work(Controller * controller_) : Work(controller_) {}
+	virtual void OnQueued()
+	{
+		controller->EnableControl(START2, false);
+		controller->UpdateControls();
+	}
+	virtual void Execute() 
+	{ 
+		std::this_thread::sleep_for(std::chrono::seconds(1)); 
+	}
+	virtual void OnFinish()
+	{
+		if (!controller->GetDone())
+		{
+			controller->EnableControl(STOP2, true);
+			Work::OnFinish();
+		}
+	}
+};
+
+class Stop2Work : public Work
+{
+public:
+	Stop2Work(Controller * controller_) : Work(controller_) {}
+	virtual void OnQueued()
+	{
+		controller->EnableControl(STOP2, false);
+		controller->UpdateControls();
+	}
+	virtual void Execute() 
+	{ 
+		std::this_thread::sleep_for(std::chrono::seconds(1)); 
+	}
+	virtual void OnFinish()
+	{
+		if (!controller->GetDone())
+		{
+			controller->EnableControl(START2, true);
+			Work::OnFinish();
+		}
 	}
 };
 
@@ -170,8 +241,11 @@ public:
 	{
 		controller->EnableControl(START, false);
 		controller->EnableControl(STOP, false);
+		controller->EnableControl(START2, false);
+		controller->EnableControl(STOP2, false);
 		controller->EnableControl(QUIT, false);
 		controller->UpdateControls();
+		controller->SetDone();
 	}
 	virtual void Execute() 
 	{ 

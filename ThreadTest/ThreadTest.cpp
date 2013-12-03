@@ -22,6 +22,8 @@ public:
 	{
 		conversion[START] = IDC_START;
 		conversion[STOP] = IDC_STOP;
+		conversion[START2] = IDC_START2;
+		conversion[STOP2] = IDC_STOP2;
 		conversion[QUIT] = IDC_QUIT;
 	}
 	virtual void UpdateControls()
@@ -30,7 +32,7 @@ public:
 	}
 	virtual void OnFinish(Work * work)
 	{
-		PostMessage(hDlg, WM_WORKDONE, (WPARAM)typeid(*work).hash_code(), 0);
+		PostMessage(hDlg, WM_WORKDONE, (WPARAM)IsQuitWork(work), 0);
 	}
 
 	HWND hDlg;
@@ -49,11 +51,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM /*lParam*/
 		{
 			s_win32Controller = new Win32Controller(hDlg);
 			
-			s_win32Controller->EnableControl(IDC_START, false);
-			s_win32Controller->EnableControl(IDC_STOP, false);
-			s_win32Controller->EnableControl(IDC_QUIT, true);
-			s_win32Controller->UpdateControls();
-
 			Work *work = new InitWork(s_win32Controller);
 
 			s_win32Controller->QueueWork(std::make_shared<InitWork>(InitWork(s_win32Controller)));
@@ -76,6 +73,12 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM /*lParam*/
 			case IDC_STOP:
 				s_win32Controller->QueueWork(std::make_shared<StopWork>(StopWork(s_win32Controller)));
 				break;
+			case IDC_START2:
+				s_win32Controller->QueueWork(std::make_shared<Start2Work>(Start2Work(s_win32Controller)));
+				break;
+			case IDC_STOP2:
+				s_win32Controller->QueueWork(std::make_shared<Stop2Work>(Stop2Work(s_win32Controller)));
+				break;
 			case IDC_QUIT:
 				s_win32Controller->QueueWork(std::make_shared<QuitWork>(QuitWork(s_win32Controller)));
 				break;
@@ -85,10 +88,10 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM /*lParam*/
 
 	case WM_WORKDONE:
 		{
+			bool isQuitWork = (wParam == TRUE);
 			s_win32Controller->UpdateControls();
-			if ((size_t)wParam == typeid(QuitWork).hash_code())
+			if (isQuitWork)
 			{
-				s_win32Controller->SetDone();
 				EndDialog(hDlg, 0);
 				PostQuitMessage(0);
 				delete s_win32Controller;
