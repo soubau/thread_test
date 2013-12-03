@@ -33,7 +33,7 @@ public:
 	}
 	virtual void OnFinish(Work * work)
 	{
-		std::cout << "(Done)\n";
+		std::cout << "(" << typeid(*work).name() << " Done)\n";
 		UpdateControls();
 		if (IsQuitWork(work))
 		{
